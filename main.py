@@ -1,55 +1,44 @@
-from fastapi import FastAPI, Request, Form, BackgroundTasks
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from typing import Optional
 import requests
+import httpx
+import asyncio
 import os
 
 app = FastAPI()
+
+# 🧠 Wallet addresses
+BTC_WALLET = "bc1qh8es4m9mjua5w08qv00"
+USDT_WALLET = "UQCtCm584SIWPddaOQ9ec8MULk2Aqi5ucw2s073DzNtQQc6L"
+
+# 🌐 Templates folder
 templates = Jinja2Templates(directory="templates")
 
-# 🔐 Your crypto wallet addresses
-BTC_WALLET = "bc1qh8es4m9mjua5w08qv00"
-USDT_WALLET = "TE6bcewMeHxn8USQ65baJh4ynx8Qw5dvop"
-
-# 🔐 Load Flutterwave secret key from Render environment variable
-FLW_SECRET_KEY = os.getenv("FLW_SECRET_KEY")
-
-# 🧾 Sample HTML payment form page
-@app.get("/pay", response_class=HTMLResponse)
-async def get_payment_form(request: Request):
+# 📄 Home page – form to choose payment type
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
     return templates.TemplateResponse("payment.html", {"request": request})
 
-# ✅ Webhook to receive transaction events from Flutterwave
-@app.post("/webhook")
-async def flutterwave_webhook(request: Request, background_tasks: BackgroundTasks):
-    payload = await request.json()
+# 💳 Handle card payments via Flutterwave
+@app.post("/pay-card")
+async def pay_card(
+    request: Request,
+    amount: str = Form(...),
+    email: str = Form(...)
+):
+    flutterwave_pub_key = os.getenv("FLW_PUBLIC_KEY", "FLWPUBK_TEST-xxxxxxxxxxxxxxxxxxxxxx-X")
+    
+    # Flutterwave inline payment link
+    redirect_url = f"https://checkout.flutterwave.com/v3/hosted/pay?public_key={flutterwave_pub_key}&tx_ref=TX-{email}&amount={amount}&currency=USD&customer[email]={email}&redirect_url=https://yourdomain.com/success"
 
-    # Flutterwave verification
-    event_type = payload.get("event")
-    if event_type == "charge.completed":
-        data = payload.get("data", {})
-        status = data.get("status")
-        amount = data.get("amount")
-        currency = data.get("currency")
-        customer_wallet = data.get("meta", {}).get("wallet")  # assuming user input
+    return RedirectResponse(redirect_url)
 
-        if status == "successful":
-            print(f"✅ Payment received: {amount} {currency}")
-
-            # Simulate crypto send in background
-            background_tasks.add_task(send_crypto, currency, amount, customer_wallet)
-
-    return {"status": "ok"}
-
-# 🔁 Function to simulate sending crypto to user wallet
-def send_crypto(currency: str, amount: float, wallet_address: Optional[str]):
-    if not wallet_address:
-        print("❌ No wallet address provided.")
-        return
-
-    # Simulated: Convert fiat to crypto using your own rate
-    crypto_amount = amount / 100  # Just a fake conversion logic
-    print(f"💸 Sending {crypto_amount} {currency} worth to {wallet_address}")
-    # Replace with actual crypto send logic here using API or RPC
+# 🌍 Fetch live BTC rate (optional)
+@app.get("/btc-rate")
+async def get_btc_rate():
+    async with httpx.AsyncClient() as client:
+        res = await client.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
+        rate = res.json().get("bitcoin", {}).get("usd", None)
+        return {"btc_usd": rate}
