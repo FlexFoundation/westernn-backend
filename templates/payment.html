@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Westernn Crypto Payment</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #2b2b2b;
+    }
+    .wallet {
+      font-weight: bold;
+      color: #0053b3;
+    }
+    .done-btn {
+      margin-top: 20px;
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background-color: #0053b3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .done-btn:hover {
+      background-color: #003a80;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Complete Your Payment</h2>
+    <p><strong>Amount:</strong> ₦{{ amount }}</p>
+    <p><strong>Selected Crypto:</strong> {{ currency }}</p>
+    <p>Once payment is confirmed, your crypto will be sent to:</p>
+    <p class="wallet">{{ wallet_address }}</p>
+
+    <form action="/thank-you" method="get">
+      <button class="done-btn">Done</button>
+    </form>
+  </div>
+</body>
+  </html>
