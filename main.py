@@ -1,35 +1,55 @@
-from fastapi import FastAPI, Request, Form from fastapi.responses import HTMLResponse, RedirectResponse from pydantic import BaseModel import datetime import json import httpx
+from fastapi import FastAPI, Request, Form, BackgroundTasks
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from typing import Optional
+import requests
+import os
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
-WALLET ADDRESSES (Replace with yours)
+# 🔐 Your crypto wallet addresses
+BTC_WALLET = "bc1qh8es4m9mjua5w08qv00"
+USDT_WALLET = "TE6bcewMeHxn8USQ65baJh4ynx8Qw5dvop"
 
-BTC_WALLET = "bc1qh8es4m9mjua5w08qv00" USDT_WALLET = "UQCtCm584SIWPddaOQ9ec8MULk2Aqi5ucw2s073DzNtQQc6L" ETH_WALLET = "0xf22566f4a5b70437e33f8c846e3780f4609e2abe" XRP_WALLET = "rf9nJMNU3Y2D8EkeDG4Z4f9qUPhThdrsGk" SOL_WALLET = "5msvCNwA3boDLKrgBEA8MPTnFq4bfeEqTttyEnr2nnsM" BCH_WALLET = "bitcoincash:qzk5keejgnc0urhqtrq3lk8xrus6nef5gvxh4476qa"
+# 🔐 Load Flutterwave secret key from Render environment variable
+FLW_SECRET_KEY = os.getenv("FLW_SECRET_KEY")
 
-@app.get("/") def read_root(): return {"message": "Welcome to Westernn - Your crypto gateway is live!"}
+# 🧾 Sample HTML payment form page
+@app.get("/pay", response_class=HTMLResponse)
+async def get_payment_form(request: Request):
+    return templates.TemplateResponse("payment.html", {"request": request})
 
-@app.post("/webhook") async def handle_webhook(request: Request): payload = await request.json() event_type = payload.get("event")
+# ✅ Webhook to receive transaction events from Flutterwave
+@app.post("/webhook")
+async def flutterwave_webhook(request: Request, background_tasks: BackgroundTasks):
+    payload = await request.json()
 
-if event_type == "charge.completed":
-    data = payload.get("data", {})
-    tx_ref = data.get("tx_ref")
-    amount = data.get("amount")
-    currency = data.get("currency")
-    email = data.get("customer", {}).get("email")
-    meta = data.get("meta", {})
-    crypto_type = meta.get("crypto")  # Example: BTC, USDT, etc.
-    wallet_address = meta.get("wallet")  # User's provided wallet address
+    # Flutterwave verification
+    event_type = payload.get("event")
+    if event_type == "charge.completed":
+        data = payload.get("data", {})
+        status = data.get("status")
+        amount = data.get("amount")
+        currency = data.get("currency")
+        customer_wallet = data.get("meta", {}).get("wallet")  # assuming user input
 
-    if crypto_type and wallet_address:
-        # Simulate crypto conversion + sending
-        print(f"Received {amount} {currency} from {email}, converting to {crypto_type} and sending to {wallet_address}.")
-        # You can add your own rate logic or call API to convert
+        if status == "successful":
+            print(f"✅ Payment received: {amount} {currency}")
 
-return {"status": "success"}
+            # Simulate crypto send in background
+            background_tasks.add_task(send_crypto, currency, amount, customer_wallet)
 
-@app.get("/payment", response_class=HTMLResponse) def payment_page(): return """ <html> <head><title>Westernn Payment</title></head> <body> <h2>Pay with Card</h2> <form action="https://checkout.flutterwave.com/v3/hosted/pay" method="GET"> <button type="submit">Pay Now</button> </form> <br/> <h2>Pay with Crypto</h2> <ul> <li>BTC: bc1qh8es4m9mjua5w08qv00</li> <li>USDT (TRC20): UQCtCm584SIWPddaOQ9ec8MULk2Aqi5ucw2s073DzNtQQc6L</li> <li>ETH: 0xf22566f4a5b70437e33f8c846e3780f4609e2abe</li> <li>XRP: rf9nJMNU3Y2D8EkeDG4Z4f9qUPhThdrsGk</li> <li>SOL: 5msvCNwA3boDLKrgBEA8MPTnFq4bfeEqTttyEnr2nnsM</li> <li>BCH: bitcoincash:qzk5keejgnc0urhqtrq3lk8xrus6nef5gvxh4476qa</li> </ul> </body> </html> """
+    return {"status": "ok"}
 
-@app.get("/thank-you") def thank_you(): return {"message": "Payment successful! Crypto is on the way."}
+# 🔁 Function to simulate sending crypto to user wallet
+def send_crypto(currency: str, amount: float, wallet_address: Optional[str]):
+    if not wallet_address:
+        print("❌ No wallet address provided.")
+        return
 
-You can expand this with logging, conversions, etc.
-
+    # Simulated: Convert fiat to crypto using your own rate
+    crypto_amount = amount / 100  # Just a fake conversion logic
+    print(f"💸 Sending {crypto_amount} {currency} worth to {wallet_address}")
+    # Replace with actual crypto send logic here using API or RPC
