@@ -1,60 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Westernn Crypto Payment</title>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background-color: #f9f9f9;
-      color: #333;
-    }
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-      color: #2b2b2b;
-    }
-    .wallet {
-      font-weight: bold;
-      color: #0053b3;
-    }
-    .done-btn {
-      margin-top: 20px;
-      display: block;
-      width: 100%;
-      padding: 10px;
-      background-color: #0053b3;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .done-btn:hover {
-      background-color: #003a80;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>CryptoPay Genius</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f8f8;
+            padding: 20px;
+            max-width: 500px;
+            margin: auto;
+        }
+        h1 { color: #333; }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px #ccc;
+        }
+        input, button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Complete Your Payment</h2>
-    <p><strong>Amount:</strong> ₦{{ amount }}</p>
-    <p><strong>Selected Crypto:</strong> {{ currency }}</p>
-    <p>Once payment is confirmed, your crypto will be sent to:</p>
-    <p class="wallet">{{ wallet_address }}</p>
+    <h1>CryptoPay Genius</h1>
+    <form action="/pay-card" method="post">
+        <label>Amount (USD):</label>
+        <input type="number" name="amount" required>
 
-    <form action="/thank-you" method="get">
-      <button class="done-btn">Done</button>
+        <label>Email:</label>
+        <input type="email" name="email" required>
+
+        <button type="submit">Pay with Card (Flutterwave)</button>
     </form>
-  </div>
 </body>
-  </html>
+</html>
