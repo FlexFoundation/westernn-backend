@@ -1,35 +1,48 @@
-from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-import uvicorn
+from fastapi.staticfiles import StaticFiles
 import os
+import uuid
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
 
-# --- Wallets ---
-BTC_WALLET = os.getenv("BTC_WALLET", "your-btc-wallet")
-USDT_WALLET = os.getenv("USDT_WALLET", "your-usdt-wallet")
-ETH_WALLET = os.getenv("ETH_WALLET", "your-eth-wallet")
-SOL_WALLET = os.getenv("SOL_WALLET", "your-sol-wallet")
-XRP_WALLET = os.getenv("XRP_WALLET", "your-xrp-wallet")
-BCH_WALLET = os.getenv("BCH_WALLET", "your-bch-wallet")
+# Templates
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Wallet addresses
+BTC = os.getenv("BTC_WALLET")
+USDT = os.getenv("USDT_WALLET")
+ETH = os.getenv("ETH_WALLET")
+SOL = os.getenv("SOL_WALLET")
+XRP = os.getenv("XRP_WALLET")
+BCH = os.getenv("BCH_WALLET")
+
+# Flutterwave API
+FLW_PUBLIC_KEY = os.getenv("FLW_PUBLIC_KEY")
 
 @app.get("/", response_class=HTMLResponse)
-def payment_page(request: Request):
+async def show_form(request: Request):
     return templates.TemplateResponse("payment.html", {
         "request": request,
-        "btc_wallet": BTC_WALLET,
-        "usdt_wallet": USDT_WALLET,
-        "eth_wallet": ETH_WALLET,
-        "sol_wallet": SOL_WALLET,
-        "xrp_wallet": XRP_WALLET,
-        "bch_wallet": BCH_WALLET
+        "flw_public_key": FLW_PUBLIC_KEY
     })
 
-@app.post("/thankyou", response_class=HTMLResponse)
-async def thank_you(request: Request):
-    return templates.TemplateResponse("thank_you.html", {"request": request})
+@app.post("/pay", response_class=RedirectResponse)
+async def process_payment(amount: str = Form(...), email: str = Form(...)):
+    tx_ref = str(uuid.uuid4())
+    flutterwave_url = f"https://flutterwave.com/pay/{tx_ref}"
+    return RedirectResponse(url=flutterwave_url, status_code=303)
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=10000)
+@app.get("/thankyou", response_class=HTMLResponse)
+async def thank_you(request: Request):
+    return templates.TemplateResponse("thankyou.html", {
+        "request": request,
+        "btc": BTC,
+        "usdt": USDT,
+        "eth": ETH,
+        "sol": SOL,
+        "xrp": XRP,
+        "bch": BCH,
+    })
