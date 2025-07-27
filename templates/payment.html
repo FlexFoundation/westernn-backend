@@ -1,50 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>CryptoPay Genius</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f8f8f8;
-            padding: 20px;
-            max-width: 500px;
-            margin: auto;
-        }
-        h1 { color: #333; }
-        form {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 5px #ccc;
-        }
-        input, button {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover { background: #0056b3; }
-    </style>
+  <title>Westernn – Pay with Card</title>
 </head>
 <body>
-    <h1>CryptoPay Genius</h1>
-    <form action="/pay-card" method="post">
-        <label>Amount (USD):</label>
-        <input type="number" name="amount" required>
+  <h2>Pay with Flutterwave</h2>
+  <form action="/pay" method="post">
+    <label>Amount:</label><br>
+    <input type="number" name="amount" required><br><br>
 
-        <label>Email:</label>
-        <input type="email" name="email" required>
+    <label>Email:</label><br>
+    <input type="email" name="email" required><br><br>
 
-        <button type="submit">Pay with Card (Flutterwave)</button>
-    </form>
+    <button type="submit">Pay Now</button>
+  </form>
 </body>
 </html>
