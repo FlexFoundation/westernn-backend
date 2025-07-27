@@ -1,44 +1,57 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-import requests
-import httpx
-import asyncio
 import os
+import requests
 
 app = FastAPI()
-
-# 🧠 Wallet addresses
-BTC_WALLET = "bc1qh8es4m9mjua5w08qv00"
-USDT_WALLET = "UQCtCm584SIWPddaOQ9ec8MULk2Aqi5ucw2s073DzNtQQc6L"
-
-# 🌐 Templates folder
 templates = Jinja2Templates(directory="templates")
 
-# 📄 Home page – form to choose payment type
+# ENV KEYS
+FLW_PUBLIC_KEY = os.getenv("FLUTTERWAVE_PUBLIC_KEY")
+FLW_SECRET_KEY = os.getenv("FLUTTERWAVE_SECRET_KEY")
+NOWNODES_API_KEY = os.getenv("NOWNODES_API_KEY")
+
+# WALLET ADDRESSES (REPLACE WITH YOURS IF NEEDED)
+BTC_WALLET = "bc1qh8es4m9mjua5w08qv00"
+USDT_WALLET = "UQCtCm584SIWPddaOQ9ec8MULk2Aqi5ucw2s073DzNtQQc6L"
+ETH_WALLET = "0xf22566f4a5b70437e33f8c846e3780f4609e2abe"
+XRP_WALLET = "rf9nJMNU3Y2D8EkeDG4Z4f9qUPhThdrsGk"
+SOL_WALLET = "5msvCNwA3boDLKrgBEA8MPTnFq4bfeEqTttyEnr2nnsM"
+BCH_WALLET = "bitcoincash:qzk5keejgnc0urhqtrq3lk8xrus6nef5gvxh4476qa"
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("payment.html", {"request": request})
+    return templates.TemplateResponse("payment.html", {
+        "request": request,
+        "flw_key": FLW_PUBLIC_KEY,
+        "btc_wallet": BTC_WALLET,
+        "usdt_wallet": USDT_WALLET,
+        "eth_wallet": ETH_WALLET,
+        "xrp_wallet": XRP_WALLET,
+        "sol_wallet": SOL_WALLET,
+        "bch_wallet": BCH_WALLET,
+    })
 
-# 💳 Handle card payments via Flutterwave
-@app.post("/pay-card")
-async def pay_card(
+@app.post("/process")
+async def process_payment(
     request: Request,
-    amount: str = Form(...),
-    email: str = Form(...)
+    name: str = Form(...),
+    email: str = Form(...),
+    amount: float = Form(...),
+    currency: str = Form(...)
 ):
-    flutterwave_pub_key = os.getenv("FLW_PUBLIC_KEY", "FLWPUBK_TEST-xxxxxxxxxxxxxxxxxxxxxx-X")
-    
-    # Flutterwave inline payment link
-    redirect_url = f"https://checkout.flutterwave.com/v3/hosted/pay?public_key={flutterwave_pub_key}&tx_ref=TX-{email}&amount={amount}&currency=USD&customer[email]={email}&redirect_url=https://yourdomain.com/success"
+    # You can handle logging or API communication here
+    return RedirectResponse("/thank-you", status_code=302)
 
-    return RedirectResponse(redirect_url)
+@app.get("/thank-you", response_class=HTMLResponse)
+async def thank_you(request: Request):
+    return templates.TemplateResponse("thank_you.html", {"request": request})
 
-# 🌍 Fetch live BTC rate (optional)
-@app.get("/btc-rate")
-async def get_btc_rate():
-    async with httpx.AsyncClient() as client:
-        res = await client.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
-        rate = res.json().get("bitcoin", {}).get("usd", None)
-        return {"btc_usd": rate}
+@app.get("/btc-address-check")
+async def check_btc_balance():
+    url = f"https://btcbook.nownodes.io/api/v2/address/{BTC_WALLET}"
+    headers = {"api-key": NOWNODES_API_KEY}
+    response = requests.get(url, headers=headers)
+    return response.json()
